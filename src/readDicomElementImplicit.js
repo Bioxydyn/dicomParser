@@ -36,6 +36,7 @@ export default function readDicomElementImplicit (byteStream, untilTag, vrCallba
   }
 
   const element = {
+    tagStartOffset: byteStream.position,
     tag: readTag(byteStream),
     length: byteStream.readUint32(),
     dataOffset: byteStream.position

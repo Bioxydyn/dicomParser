@@ -28,6 +28,7 @@ export default function readDicomElementExplicit (byteStream, warnings, untilTag
   }
 
   const element = {
+    tagStartOffset: byteStream.position,
     tag: readTag(byteStream),
     vr: byteStream.readFixedString(2)
     // length set below based on VR

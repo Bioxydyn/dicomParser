@@ -1,6 +1,6 @@
 {
-  "name": "dicom-parser",
-  "version": "1.8.5",
+  "name": "@bioxydyn/dicom-parser",
+  "version": "1.8.10",
   "description": "Javascript parser for DICOM Part 10 data",
   "main": "dist/dicomParser.min.js",
   "module": "dist/dicomParser.min.js",
@@ -10,14 +10,14 @@
     "imaging"
   ],
   "author": "Chris Hafey",
-  "homepage": "https://github.com/cornerstonejs/dicomParser",
+  "homepage": "https://github.com/bioxydyn/dicomParser",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/cornerstonejs/dicomParser/issues"
+    "url": "https://github.com/bioxydyn/dicomParser/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/cornerstonejs/dicomParser.git"
+    "url": "https://github.com/bioxydyn/dicomParser.git"
   },
   "scripts": {
     "build": "npm run version && npm run webpack && npm run copy:meteor && npm run doc:generate",
@@ -69,8 +69,8 @@
     "karma-webpack": "^3.0.0",
     "lodash": "4.17.13",
     "mocha": "^4.0.1",
-    "puppeteer": "^1.2.0",
     "opn-cli": "^3.1.0",
+    "puppeteer": "^1.2.0",
     "rusha": "^0.8.6",
     "shx": "^0.2.2",
     "uglifyjs-webpack-plugin": "^1.2.4",
