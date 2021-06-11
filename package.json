@@ -1,6 +1,6 @@
 {
   "name": "@bioxydyn/dicom-parser",
-  "version": "1.8.8",
+  "version": "1.8.9",
   "description": "Javascript parser for DICOM Part 10 data",
   "main": "dist/dicomParser.min.js",
   "module": "dist/dicomParser.min.js",
