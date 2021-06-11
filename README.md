@@ -158,8 +158,6 @@ Running the build:
 Automatically running the build and unit tests after each source change:
 > npm run watch
 
-Build
-
 ## Publish
 
 This library uses `semantic-release` to publish packages. The syntax of commits against the `master` branch
