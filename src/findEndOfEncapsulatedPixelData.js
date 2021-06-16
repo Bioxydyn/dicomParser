@@ -48,7 +48,6 @@ export default function findEndOfEncapsulatedElement (byteStream, element, warni
     if (tag === 'xfffee0dd') {
       byteStream.seek(length);
       element.length = byteStream.position - element.dataOffset;
-      element.endTagOffset = byteStream.position;
 
       return;
     } else if (tag === 'xfffee000') {

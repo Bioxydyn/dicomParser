@@ -55,7 +55,6 @@ function readSQElementUndefinedLengthImplicit (byteStream, element, vrCallback) 
       // set the correct length
       element.length = byteStream.position - element.dataOffset;
       byteStream.seek(8);
-      element.endTagOffset = byteStream.position;
 
       return element;
     }
