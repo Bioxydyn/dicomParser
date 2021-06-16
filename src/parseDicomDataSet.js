@@ -24,7 +24,9 @@ export function parseDicomDataSetExplicit (dataSet, byteStream, maxPosition, opt
   const elements = dataSet.elements;
 
   while (byteStream.position < maxPosition) {
-    const element = readDicomElementExplicit(byteStream, dataSet.warnings, options.untilTag);
+    let element = readDicomElementExplicit(byteStream, dataSet.warnings, options.untilTag);
+
+    element.tagEndOffset = bytestream.position;
 
     elements[element.tag] = element;
     if (element.tag === options.untilTag) {
@@ -56,7 +58,9 @@ export function parseDicomDataSetImplicit (dataSet, byteStream, maxPosition, opt
   const elements = dataSet.elements;
 
   while (byteStream.position < maxPosition) {
-    const element = readDicomElementImplicit(byteStream, options.untilTag, options.vrCallback);
+    let element = readDicomElementImplicit(byteStream, options.untilTag, options.vrCallback);
+
+    element.tagEndOffset = bytestream.position;
 
     elements[element.tag] = element;
     if (element.tag === options.untilTag) {
