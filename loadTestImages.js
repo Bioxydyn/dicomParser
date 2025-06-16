@@ -1,4 +1,7 @@
 /* eslint-disable max-len, quotes, no-sync, func-style, no-console, no-unused-vars, no-undef, no-restricted-syntax, prefer-const, no-inner-declarations */
+
+// Run with e.g., NODE_OPTIONS=--openssl-legacy-provider npm run build > /dev/null && node loadTestImages.js
+
 const dicomParser = require('./dist/dicomParser.min.js');
 const fs = require('fs');
 const path = require('path');
