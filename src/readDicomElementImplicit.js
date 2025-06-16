@@ -34,9 +34,11 @@ export default function readDicomElementImplicit (byteStream, untilTag, vrCallba
     throw 'dicomParser.readDicomElementImplicit: missing required parameter \'byteStream\'';
   }
 
+  const tagStartOffset = byteStream.position;
   const tag = readTag(byteStream);
 
   const element = {
+    tagStartOffset,
     tag,
     vr: (vrCallback !== undefined ? vrCallback(tag) : undefined),
     length: byteStream.readUint32(),

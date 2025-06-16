@@ -31,7 +31,10 @@ export default function readDicomElementExplicit (byteStream, warnings, untilTag
     throw 'dicomParser.readDicomElementExplicit: missing required parameter \'byteStream\'';
   }
 
+  const tagStartOffset = byteStream.position;
+
   const element = {
+    tagStartOffset,
     tag: readTag(byteStream),
     vr: byteStream.readFixedString(2)
     // length set below based on VR

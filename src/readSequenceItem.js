@@ -17,7 +17,10 @@ export default function readSequenceItem (byteStream) {
     throw 'dicomParser.readSequenceItem: missing required parameter \'byteStream\'';
   }
 
+  const tagStartOffset = byteStream.position;
+
   const element = {
+    tagStartOffset,
     tag: readTag(byteStream),
     length: byteStream.readUint32(),
     dataOffset: byteStream.position
