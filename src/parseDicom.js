@@ -18,6 +18,9 @@ const LEI = '1.2.840.10008.1.2';
 // BEI (Big Endian Implicit) is deprecated, but needs special parse handling
 const BEI = '1.2.840.10008.1.2.2';
 
+// Private GE Little Endian Implicit with Big Endian Pixel Data
+const PRIVATE_GE_LE_IMPLICIT_BE_PIXEL_DATA = '1.2.840.113619.5.2';
+
 /**
  * Parses a DICOM P10 byte array and returns a DataSet object with the parsed elements.
  * If the options argument is supplied and it contains the untilTag property, parsing
@@ -48,7 +51,11 @@ export default function parseDicom(byteArray, options = {}) {
 
   function isExplicit(transferSyntax) {
     // implicit little endian
-    if (transferSyntax === '1.2.840.10008.1.2') {
+    if (transferSyntax === LEI) { // '1.2.840.10008.1.2'
+      return false;
+    }
+    // Private GE Little Endian Implicit with Big Endian Pixel Data
+    if (transferSyntax === PRIVATE_GE_LE_IMPLICIT_BE_PIXEL_DATA) {
       return false;
     }
 
@@ -141,15 +148,16 @@ export default function parseDicom(byteArray, options = {}) {
       if (explicit) {
         parseDicomDataSet.parseDicomDataSetExplicit(dataSet, dataSetByteStream, dataSetByteStream.byteArray.length, options);
       } else {
-        parseDicomDataSet.parseDicomDataSetImplicit(dataSet, dataSetByteStream, dataSetByteStream.byteArray.length, options);
+        parseDicomDataSet.parseDicomDataSetImplicit(dataSet, dataSetByteStream, dataSetByteStream.byteArray.length, { ...options, transferSyntax });
       }
     } catch (e) {
-      const ex = {
-        exception: e,
-        dataSet
-      };
-
-      throw ex;
+      const errMsg = `dicomParser.parseDicom: Parsing failed with error: ${e.message || e}.`;
+      const error = new Error(errMsg);
+      error.dataSet = dataSet;
+      if (e instanceof Error) {
+        error.originalError = e;
+      }
+      throw error;
     }
 
     return dataSet;

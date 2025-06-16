@@ -2,6 +2,7 @@ import ByteStream from './byteStream.js';
 import DataSet from './dataSet.js';
 import littleEndianByteArrayParser from './littleEndianByteArrayParser.js';
 import readDicomElementExplicit from './readDicomElementExplicit.js';
+import readDicomElementImplicit from './readDicomElementImplicit.js';
 
 /**
  * Parses a DICOM P10 byte array and returns a DataSet object with the parsed elements.  If the options
@@ -43,6 +44,21 @@ export default function readPart10Header (byteArray, options = {}) {
     return true;
   }
 
+  function getMetaVRLittleEndian(tag) {
+    if (tag === 'x00020000') return 'UL'; // File Meta Information Group Length
+    if (tag === 'x00020001') return 'OB'; // File Meta Information Version
+    if (tag === 'x00020002') return 'UI'; // Media Storage SOP Class UID
+    if (tag === 'x00020003') return 'UI'; // Media Storage SOP Instance UID
+    if (tag === 'x00020010') return 'UI'; // Transfer Syntax UID
+    if (tag === 'x00020012') return 'UI'; // Implementation Class UID
+    if (tag === 'x00020013') return 'SH'; // Implementation Version Name
+    if (tag === 'x00020016') return 'AE'; // Source Application Entity Title
+    // According to PS3.5 Table 7.1-1, these are the defined File Meta Information tags
+    // Other group 2 tags are not expected in the meta header.
+    // console.warn(`readPart10Header:getMetaVRLittleEndian: Unknown meta tag ${tag} encountered.`);
+    return undefined; // Or 'UN' if specific handling for unknown group 2 tags is preferred
+  }
+
   // main function here
   function readTheHeader() {
     // Per the DICOM standard, the header is always encoded in Explicit VR Little Endian (see PS3.10, section 7.1)
@@ -51,8 +67,12 @@ export default function readPart10Header (byteArray, options = {}) {
 
     const warnings = [];
     const elements = {};
+    let metaHeaderIsExplicit = true; // Assume explicit first
+    let firstMetaElementAttempted = false;
+
 
     if (!isPart10) {
+      // console.log('readPart10Header: Not a Part 10 file, or TransferSyntaxUID provided. Creating dummy metaHeaderDataSet.');
       littleEndianByteStream.position = 0;
       const metaHeaderDataSet = {
         elements: { x00020010: { tag: 'x00020010', vr: 'UI', Value: TransferSyntaxUID } },
@@ -63,11 +83,37 @@ export default function readPart10Header (byteArray, options = {}) {
     }
 
     while (littleEndianByteStream.position < littleEndianByteStream.byteArray.length) {
-      const position = littleEndianByteStream.position;
-      const element = readDicomElementExplicit(littleEndianByteStream, warnings);
+      const currentPositionBeforeRead = littleEndianByteStream.position;
+      let element;
+
+      if (metaHeaderIsExplicit) {
+        // console.log(`readPart10Header: Attempting to read meta element EXPLICITLY at position ${currentPositionBeforeRead}`);
+        element = readDicomElementExplicit(littleEndianByteStream, warnings);
+        // console.log(`readPart10Header: EXPLICITLY read element ${element.tag}, length ${element.length}, VR ${element.vr}, new position ${littleEndianByteStream.position}`);
+
+        if (!firstMetaElementAttempted) {
+          firstMetaElementAttempted = true; // Mark that we've processed the first element attempt
+          // Check if VR is valid (two uppercase letters)
+          if (!element.vr || !/^[A-Z]{2}$/.test(element.vr)) {
+            // console.log(`readPart10Header: First meta element's VR ('${element.vr}') is not valid. Switching to IMPLICIT meta header parsing. Current stream position before seek: ${littleEndianByteStream.position}`);
+            metaHeaderIsExplicit = false;
+            // Reset stream to before the explicit read attempt
+            littleEndianByteStream.position = currentPositionBeforeRead; // Direct assignment for absolute positioning
+            // console.log(`readPart10Header: Stream position after direct assignment to ${currentPositionBeforeRead}: ${littleEndianByteStream.position}. Restarting loop for implicit read.`);
+            // Discard the incorrectly parsed element and restart loop to read implicitly
+            continue;
+          }
+          // VR is valid, proceed with this element
+        }
+      } else {
+        // console.log(`readPart10Header: Attempting to read meta element IMPLICITLY at position ${currentPositionBeforeRead}`);
+        element = readDicomElementImplicit(littleEndianByteStream, undefined, getMetaVRLittleEndian);
+        // console.log(`readPart10Header: IMPLICITLY read element ${element.tag}, length ${element.length}, VR ${element.vr}, new position ${littleEndianByteStream.position}`);
+      }
 
       if (element.tag > 'x0002ffff') {
-        littleEndianByteStream.position = position;
+        // console.log(`readPart10Header: Encountered tag ${element.tag}, exiting meta header parsing loop.`);
+        littleEndianByteStream.position = currentPositionBeforeRead; // Revert position to before this non-meta tag
         break;
       }
       // Cache the littleEndianByteArrayParser for meta header elements, since the rest of the data set may be big endian
@@ -76,6 +122,7 @@ export default function readPart10Header (byteArray, options = {}) {
       elements[element.tag] = element;
     }
 
+    // console.log('readPart10Header: Finished parsing meta header elements. Elements found:', Object.keys(elements));
     const metaHeaderDataSet = new DataSet(littleEndianByteStream.byteArrayParser, littleEndianByteStream.byteArray, elements);
 
     metaHeaderDataSet.warnings = littleEndianByteStream.warnings;

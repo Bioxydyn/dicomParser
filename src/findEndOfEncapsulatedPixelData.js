@@ -20,6 +20,7 @@ export default function findEndOfEncapsulatedElement (byteStream, element, warni
     throw 'dicomParser.findEndOfEncapsulatedElement: missing required parameter \'element\'';
   }
 
+
   element.encapsulatedPixelData = true;
   element.basicOffsetTable = [];
   element.fragments = [];
@@ -44,11 +45,16 @@ export default function findEndOfEncapsulatedElement (byteStream, element, warni
   const baseOffset = byteStream.position;
 
   while (byteStream.position < byteStream.byteArray.length) {
+    // Check if we have enough bytes to read a tag (4 bytes) and length (4 bytes)
+    if (byteStream.position + 8 > byteStream.byteArray.length) {
+      break;
+    }
+    
     const tag = readTag(byteStream);
     let length = byteStream.readUint32();
 
     if (tag === 'xfffee0dd') {
-      byteStream.seek(length);
+      // Sequence delimiter - don't seek by length, just set element length and return
       element.length = byteStream.position - element.dataOffset;
 
       return;
@@ -74,16 +80,41 @@ export default function findEndOfEncapsulatedElement (byteStream, element, warni
         length
       });
 
-      byteStream.seek(length);
+      // Only seek if we have data to seek through
+      if (length > 0 && byteStream.position + length <= byteStream.byteArray.length) {
+        byteStream.seek(length);
+      } else {
+        // If we can't seek the full length, seek to the end of the available data
+        const remainingBytes = byteStream.byteArray.length - byteStream.position;
+        if (remainingBytes > 0) {
+          byteStream.seek(remainingBytes);
+        }
+      }
       element.length = byteStream.position - element.dataOffset;
 
       return;
     }
 
-    byteStream.seek(length);
+    // Only seek if we have data to seek through and it won't exceed the buffer
+    if (length > 0 && byteStream.position + length <= byteStream.byteArray.length) {
+      byteStream.seek(length);
+    } else {
+      // If we can't seek the full length, seek to the end of the available data
+      const remainingBytes = byteStream.byteArray.length - byteStream.position;
+      if (remainingBytes > 0) {
+        byteStream.seek(remainingBytes);
+      }
+      // We've reached the end of available data
+      break;
+    }
   }
 
   if (warnings) {
     warnings.push(`pixel data element ${element.tag} missing sequence delimiter tag xfffee0dd`);
+  }
+
+  // Set element length to current position minus data offset if not already set
+  if (element.length === undefined) {
+    element.length = byteStream.position - element.dataOffset;
   }
 }
