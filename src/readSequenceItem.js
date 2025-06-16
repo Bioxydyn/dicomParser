@@ -18,7 +18,6 @@ export default function readSequenceItem (byteStream) {
   }
 
   const element = {
-    tagStartOffset: byteStream.position,
     tag: readTag(byteStream),
     length: byteStream.readUint32(),
     dataOffset: byteStream.position

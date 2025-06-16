@@ -11,9 +11,13 @@ import readSequenceItemsExplicit from './readSequenceElementExplicit.js';
 
 const getDataLengthSizeInBytesForVR = (vr) => {
   if (vr === 'OB' ||
+      vr === 'OD' ||
+      vr === 'OL' ||
       vr === 'OW' ||
       vr === 'SQ' ||
       vr === 'OF' ||
+      vr === 'UC' ||
+      vr === 'UR' ||
       vr === 'UT' ||
       vr === 'UN') {
     return 4;
@@ -28,7 +32,6 @@ export default function readDicomElementExplicit (byteStream, warnings, untilTag
   }
 
   const element = {
-    tagStartOffset: byteStream.position,
     tag: readTag(byteStream),
     vr: byteStream.readFixedString(2)
     // length set below based on VR

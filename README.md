@@ -4,7 +4,7 @@
 dicomParser
 ===========
 
-dicomParser is a lightweight library for parsing DICOM P10 byte streams in modern HTML5 based web browsers (IE10+),
+dicomParser is a lightweight library for parsing DICOM P10 byte streams, as well as raw (not encapsulated in part 10) byte streams, in modern HTML5 based web browsers (IE10+),
 Node.js and Meteor.  dicomParser is fast, easy to use and has no required external dependencies.
 
 Live Examples
@@ -12,8 +12,8 @@ Live Examples
 
 The best way to see the power of this library is to actually see it in use.  A number of live examples are
 included that are not only useful but also show how to use dicomParser.
-[Click here for a list of all live examples](https://rawgithub.com/cornerstonejs/dicomParser/master/examples/index.html)
-Make sure you try out the [DICOM Dump with Data Dictionary](https://rawgit.com/cornerstonejs/dicomParser/master/examples/dumpWithDataDictionary/index.html)
+[Click here for a list of all live examples](https://cornerstonejs.github.io/dicomParser/examples/index.html)
+Make sure you try out the [DICOM Dump with Data Dictionary](https://cornerstonejs.github.io/dicomParser/examples/dumpWithDataDictionary/index.html)
 which is a very useful tool and excellent example of most features.
 
 Community
@@ -44,7 +44,7 @@ the Deflated Explicit VR Little Endian transfer syntax
 Usage
 -----
 
-```
+```javascript
 // create a Uint8Array or node.js Buffer with the contents of the DICOM P10 byte stream
 // you want to parse (e.g. XMLHttpRequest to a WADO server)
 var arrayBuffer = new ArrayBuffer(bufferSize);
@@ -52,8 +52,10 @@ var byteArray = new Uint8Array(arrayBuffer);
 
 try
 {
-   // Parse the byte array to get a DataSet object that has the parsed contents
-    var dataSet = dicomParser.parseDicom(byteArray/*, options */);
+    // Allow raw files
+    const options = { TransferSyntaxUID: '1.2.840.10008.1.2' };
+    // Parse the byte array to get a DataSet object that has the parsed contents
+    var dataSet = dicomParser.parseDicom(byteArray, options);
 
     // access a string element
     var studyInstanceUid = dataSet.string('x0020000d');
@@ -62,7 +64,7 @@ try
     var pixelDataElement = dataSet.elements.x7fe00010;
 
     // create a typed array on the pixel data (this example assumes 16 bit unsigned data)
-    var pixelData = new Uint16Array(dataSet.byteArray.buffer, pixelDataElement.dataOffset, pixelDataElement.length);
+    var pixelData = new Uint16Array(dataSet.byteArray.buffer, pixelDataElement.dataOffset, pixelDataElement.length / 2);
 }
 catch(ex)
 {
@@ -70,7 +72,7 @@ catch(ex)
 }
 ```
 
-[See the live examples for more in depth usage of the library](https://rawgithub.com/cornerstonejs/dicomParser/master/examples/index.html)
+[See the live examples for more in depth usage of the library](https://cornerstonejs.github.io/dicomParser/examples/index.html)
 
 Note that actually displaying DICOM images is quite complex due to the variety of pixel formats and compression
 algorithms that DICOM supports.  If you are interested in displaying images, please take a look at the
@@ -78,13 +80,17 @@ algorithms that DICOM supports.  If you are interested in displaying images, ple
 [cornerstoneWADOImageLoader](https://github.com/cornerstonejs/cornerstoneWADOImageLoader) which uses this
 library to extract the pixel data from DICOM files and display the images with
 [cornerstone library](https://github.com/cornerstonejs/cornerstone).
-You can find the actual code that extracts grayscale pixel data using this library
-[here](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/src/makeGrayscaleImage.js).
+You can find the actual code that extracts pixel data using this library
+[here](https://github.com/cornerstonejs/cornerstoneWADOImageLoader/blob/master/src/imageLoader/createImage.js).
 
 Options
 -------
 
 ```dicomParser.parseDicom``` accepts an optional second argument that is an options object. The accepted properties are:
+
+#### TransferSyntaxUID
+A string value used as the default transfer syntax uid for parsing raw DICOM (not encapsualted in Part 10).
+For raw DICOM files, this value should be the LEI UID value.
 
 #### untilTag
 
@@ -163,10 +169,31 @@ Automatically running the build and unit tests after each source change:
 This library uses `semantic-release` to publish packages. The syntax of commits against the `master` branch
 determine how the new version calculated.
 
-> npm run build:ci
-> npx semantic-release@17.0.4 --no-ci
-
-Note: Ensure `GITHUB_TOKEN` for bioxydyn/dicomParser is set.
+<table>
+  <tr>
+    <th>Example Commit</th>
+    <th>Release Type</th>
+  </tr>
+  <tr>
+    <td>fix(pencil): stop graphite breaking when too much pressure applied</td>
+    <td>Patch Release</td>
+  </tr>
+  <tr>
+    <td>feat(pencil): add 'graphiteWidth' option</td>
+    <td>Feature Release</td>
+  </tr>
+  <tr>
+    <td>
+      perf(pencil): remove graphiteWidth option<br />
+      <br />
+      BREAKING CHANGE: The graphiteWidth option has been removed. 
+      The default graphite width of 10mm is always used for performance reasons.
+    </td>
+    <td>
+      Major Breaking Release
+    </td>
+  </tr>
+</table>
 
 
 Backlog
