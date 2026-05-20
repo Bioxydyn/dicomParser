@@ -30,7 +30,8 @@ export default class ByteStream {
       throw 'dicomParser.ByteStream: missing required parameter \'byteArray\'';
     }
     if ((byteArray instanceof Uint8Array) === false &&
-          (byteArray instanceof Buffer) === false) {
+          ((typeof Buffer === 'undefined') ||
+          (byteArray instanceof Buffer) === false)) {
       throw 'dicomParser.ByteStream: parameter byteArray is not of type Uint8Array or Buffer';
     }
     if (position < 0) {
@@ -75,6 +76,10 @@ export default class ByteStream {
     return new ByteStream(this.byteArrayParser, byteArrayView);
   }
 
+  getSize() {
+    return this.byteArray.length;
+  }
+
   /**
      *
      * Parses an unsigned int 16 from a byte array and advances
@@ -102,6 +107,21 @@ export default class ByteStream {
     var result = this.byteArrayParser.readUint32(this.byteArray, this.position);
 
     this.position += 4;
+
+    return result;
+  }
+
+  /**
+   * Parses an unsigned int 64 as a BigInt from a byte array and advances
+   * the position by 8 bytes
+   *
+   * @returns {*} the parsed unsigned int 64 (BigInt)
+   * @throws error if buffer overread would occur
+   */
+  readBigUint64 () {
+    var result = this.byteArrayParser.readBigUint64(this.byteArray, this.position);
+
+    this.position += 8;
 
     return result;
   }

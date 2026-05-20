@@ -1,3 +1,5 @@
+/* global BigInt */
+
 import { expect } from 'chai';
 import ByteStream from '../src/byteStream';
 import littleEndianByteArrayParser from '../src/littleEndianByteArrayParser';
@@ -300,6 +302,86 @@ describe('ByteStream', () => {
       const byteArray = new Uint8Array(32);
       const byteStream = new ByteStream(littleEndianByteArrayParser, byteArray);
       const invoker = () => byteStream.readUint32();
+
+      byteStream.seek(31);
+
+      // Act / Assert
+      expect(invoker).to.throw();
+    });
+
+  });
+
+  describe('#readBigUint64', () => {
+
+    it('should return the expected little-endian value', () => {
+      // Arrange
+      const byteArray = new Uint8Array(32);
+
+      byteArray[0] = 0x11;
+      byteArray[1] = 0x22;
+      byteArray[2] = 0x33;
+      byteArray[3] = 0x44;
+      byteArray[4] = 0x55;
+      byteArray[5] = 0x66;
+      byteArray[6] = 0x77;
+      byteArray[7] = 0x88;
+      const byteStream = new ByteStream(littleEndianByteArrayParser, byteArray);
+
+      // Act
+      const uint64 = byteStream.readBigUint64();
+
+      // Assert
+      expect(uint64).to.equal(BigInt('0x8877665544332211'));
+      expect(byteStream.position).to.equal(8);
+    });
+
+    it('should work with the big-endian parser', () => {
+      // Arrange
+      const byteArray = new Uint8Array(32);
+
+      byteArray[0] = 0x11;
+      byteArray[1] = 0x22;
+      byteArray[2] = 0x33;
+      byteArray[3] = 0x44;
+      byteArray[4] = 0x55;
+      byteArray[5] = 0x66;
+      byteArray[6] = 0x77;
+      byteArray[7] = 0x88;
+      const byteStream = new ByteStream(bigEndianByteArrayParser, byteArray);
+
+      // Act
+      const uint64 = byteStream.readBigUint64();
+
+      // Assert
+      expect(uint64).to.equal(BigInt('0x1122334455667788'));
+    });
+
+    it('should read at the very end of buffer', () => {
+      // Arrange
+      const byteArray = new Uint8Array(8);
+
+      byteArray[0] = 0x11;
+      byteArray[1] = 0x22;
+      byteArray[2] = 0x33;
+      byteArray[3] = 0x44;
+      byteArray[4] = 0x55;
+      byteArray[5] = 0x66;
+      byteArray[6] = 0x77;
+      byteArray[7] = 0x88;
+      const byteStream = new ByteStream(littleEndianByteArrayParser, byteArray);
+
+      // Act
+      const uint64 = byteStream.readBigUint64();
+
+      // Assert
+      expect(uint64).to.equal(BigInt('0x8877665544332211'));
+    });
+
+    it('should throw an exception on buffer overread', () => {
+      // Arrange
+      const byteArray = new Uint8Array(32);
+      const byteStream = new ByteStream(littleEndianByteArrayParser, byteArray);
+      const invoker = () => byteStream.readBigUint64();
 
       byteStream.seek(31);
 

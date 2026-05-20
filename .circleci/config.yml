@@ -1,10 +1,18 @@
-# version: 2
+# CircleCI is disabled for this fork. Upstream's modern config is preserved
+# below (commented) so it can be re-enabled if needed.
 
+# version: 2.1
+#
+# orbs:
+#   browser-tools: circleci/browser-tools@1.4.3
+#
 # defaults: &defaults
 #   working_directory: ~/repo
 #   docker:
-#     - image: circleci/node:latest
-
+#     - image: cimg/node:16.18-browsers
+#       environment:
+#         NODE_ENV: development
+#
 # jobs:
 #   test:
 #     <<: *defaults
@@ -12,17 +20,17 @@
 #       - checkout
 #       - restore_cache:
 #           keys:
-#             - v1-dependencies-{{ checksum "package.json" }}
-#             - v1-dependencies-
+#             - v1-dependencies-{{ checksum "package-lock.json" }}
 #       - run: npm install
 #       - run: npm run build:ci
+#       - browser-tools/install-browser-tools
 #       - save_cache:
 #           paths:
 #             - node_modules
-#           key: v1-dependencies-{{ checksum "package.json" }}
-#       # TODO: Support for unit tests in status check
-#       # - run: npm run test
-
+#             - ~/.cache/puppeteer
+#           key: v1-dependencies-{{ checksum "package-lock.json" }}
+#       - run: npm run test
+#
 #   # Publish latest
 #   deploy:
 #     <<: *defaults
@@ -43,11 +51,11 @@
 #           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
 #       - run:
 #           name: Publish package
-#           command: npx semantic-release@17.0.4
-
+#           command: npx semantic-release@19.0.5
+#
 # workflows:
 #   version: 2
-
+#
 #   # PULL REQUEST
 #   test:
 #     jobs:
@@ -56,7 +64,7 @@
 #             branches:
 #               ignore:
 #                 - master
-
+#
 #   # MERGE TO MASTER
 #   build-test-deploy:
 #     jobs:

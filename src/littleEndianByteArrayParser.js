@@ -1,3 +1,5 @@
+/* global BigInt */
+
 /**
  * Internal helper functions for parsing different types from a little-endian byte array
  */
@@ -77,6 +79,38 @@ export default {
            (byteArray[position + 1] * 256) +
            (byteArray[position + 2] * 256 * 256) +
            (byteArray[position + 3] * 256 * 256 * 256));
+  },
+
+  /**
+   * Parses an unsigned int 64 from a little-endian byte array
+   *
+   * @param byteArray the byte array to read from
+   * @param position the position in the byte array to read from
+   * @returns {*} the parsed unsigned int 64 as a BigInt
+   * @throws error if buffer overread would occur
+   * @access private
+   */
+  readBigUint64 (byteArray, position) {
+    if (position < 0) {
+      throw 'littleEndianByteArrayParser.readBigUint64: position cannot be less than 0';
+    }
+
+    if (position + 8 > byteArray.length) {
+      throw 'littleEndianByteArrayParser.readBigUint64: attempt to read past end of buffer';
+    }
+
+    // Use BigInt() constructor (not 0n / 8n literal syntax) so the source
+    // parses under older toolchain versions (e.g. babylon used by
+    // istanbul-instrumenter-loader). Semantically identical.
+    let uint64 = BigInt(0);
+    const eight = BigInt(8);
+
+    for (let i = 7; i >= 0; i--) {
+      uint64 <<= eight;
+      uint64 |= BigInt(byteArray[position + i]);
+    }
+
+    return uint64;
   },
 
   /**

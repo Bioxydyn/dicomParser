@@ -11,11 +11,16 @@ import readSequenceItemsExplicit from './readSequenceElementExplicit.js';
 
 const getDataLengthSizeInBytesForVR = (vr) => {
   if (vr === 'OB' ||
+      vr === 'OD' ||
+      vr === 'OL' ||
       vr === 'OW' ||
       vr === 'SQ' ||
       vr === 'OF' ||
+      vr === 'UC' ||
+      vr === 'UR' ||
       vr === 'UT' ||
-      vr === 'UN') {
+      vr === 'UN' ||
+      vr === 'UV') {
     return 4;
   }
 

@@ -1,3 +1,5 @@
+/* global BigInt */
+
 import { expect } from 'chai';
 import ByteStream from '../src/byteStream'
 import DataSet from '../src/dataSet';
@@ -305,6 +307,70 @@ describe('DataSet', () => {
 
       // Assert
       expect(uint16).to.be.undefined;
+    });
+
+  });
+
+  describe('#uint64', () => {
+
+    // Explicit-LE UV element x22114440 carrying the value 0x8877665544332211.
+    // UV is a long-form VR: 4 tag bytes + 'UV' + 2 reserved + 4-byte length + 8 data bytes.
+    function makeUvByteArray() {
+      const bytes = [
+        0x11, 0x22, 0x40, 0x44,            // tag (0x2211,0x4440) in LE
+        0x55, 0x56,                        // 'UV'
+        0x00, 0x00,                        // reserved
+        0x08, 0x00, 0x00, 0x00,            // length = 8 (LE 32-bit)
+        0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, // value LE
+      ];
+      const byteArray = new Uint8Array(bytes.length);
+
+      for (let i = 0; i < bytes.length; i++) {
+        byteArray[i] = bytes[i];
+      }
+
+      return byteArray;
+    }
+
+    it('parses a UV element end-to-end (length is read as 32 bits, not 16)', () => {
+      // This guards the readDicomElementExplicit change: without 'UV' in the
+      // 4-byte-length list, the parser would interpret bytes 6-7 (the reserved
+      // word) as a 16-bit length and desync for the rest of the file.
+      const byteArray = makeUvByteArray();
+      const byteStream = new ByteStream(littleEndianByteArrayParser, byteArray);
+      const dataSet = new DataSet(byteStream.byteArrayParser, byteArray, {});
+
+      dicomDataSetParsers.parseDicomDataSetExplicit(dataSet, byteStream);
+
+      const element = dataSet.elements.x22114440;
+
+      expect(element).to.be.ok;
+      expect(element.vr).to.equal('UV');
+      expect(element.length).to.equal(8);
+      // dataOffset should point past tag+VR+reserved+length = 12 bytes.
+      expect(element.dataOffset).to.equal(12);
+    });
+
+    it('returns the expected BigInt via dataSet.uint64', () => {
+      const byteArray = makeUvByteArray();
+      const byteStream = new ByteStream(littleEndianByteArrayParser, byteArray);
+      const dataSet = new DataSet(byteStream.byteArrayParser, byteArray, {});
+
+      dicomDataSetParsers.parseDicomDataSetExplicit(dataSet, byteStream);
+
+      const value = dataSet.uint64('x22114440');
+
+      expect(value).to.equal(BigInt('0x8877665544332211'));
+    });
+
+    it('returns undefined for a nonexistent tag', () => {
+      const byteArray = makeUvByteArray();
+      const byteStream = new ByteStream(littleEndianByteArrayParser, byteArray);
+      const dataSet = new DataSet(byteStream.byteArrayParser, byteArray, {});
+
+      dicomDataSetParsers.parseDicomDataSetExplicit(dataSet, byteStream);
+
+      expect(dataSet.uint64('x12345678')).to.be.undefined;
     });
 
   });
