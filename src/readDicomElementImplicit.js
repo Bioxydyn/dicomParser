@@ -2,6 +2,9 @@ import findItemDelimitationItemAndSetElementLength from './findItemDelimitationI
 import readSequenceItemsImplicit from './readSequenceElementImplicit.js';
 import readTag from './readTag.js';
 import { isPrivateTag } from './util/util.js';
+import bigEndianByteArrayParser from './bigEndianByteArrayParser.js';
+
+const PRIVATE_GE_LE_IMPLICIT_BE_PIXEL_DATA = '1.2.840.113619.5.2';
 
 /**
  * Internal helper functions for for parsing DICOM elements
@@ -29,7 +32,7 @@ const isSequence = (element, byteStream) => {
   return false;
 };
 
-export default function readDicomElementImplicit (byteStream, untilTag, vrCallback) {
+export default function readDicomElementImplicit (byteStream, untilTag, vrCallback, transferSyntax) {
   if (byteStream === undefined) {
     throw 'dicomParser.readDicomElementImplicit: missing required parameter \'byteStream\'';
   }
@@ -75,6 +78,20 @@ export default function readDicomElementImplicit (byteStream, untilTag, vrCallba
 
   // non sequence element with known length, skip over the data part
   byteStream.seek(element.length);
+
+  // Assign the parser based on the transfer syntax for pixel data
+  if (element.tag === 'x7fe00010' && transferSyntax === PRIVATE_GE_LE_IMPLICIT_BE_PIXEL_DATA) {
+    element.parser = bigEndianByteArrayParser;
+    // Ensure the VR is set correctly for Pixel Data, as it might be 'UN' or undefined from vrCallback
+    // For implicit, it's typically not set by vrCallback unless the dictionary is very comprehensive.
+    // OW is standard for PixelData.
+    if (!element.vr) {
+      element.vr = 'OW';
+    }
+  } else {
+    element.parser = byteStream.byteArrayParser;
+  }
+
 
   return element;
 }

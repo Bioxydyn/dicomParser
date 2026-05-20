@@ -169,10 +169,31 @@ Automatically running the build and unit tests after each source change:
 This library uses `semantic-release` to publish packages. The syntax of commits against the `master` branch
 determine how the new version calculated.
 
-> npm run build:ci
-> npx semantic-release@17.0.4 --no-ci
-
-Note: Ensure `GITHUB_TOKEN` for bioxydyn/dicomParser is set.
+<table>
+  <tr>
+    <th>Example Commit</th>
+    <th>Release Type</th>
+  </tr>
+  <tr>
+    <td>fix(pencil): stop graphite breaking when too much pressure applied</td>
+    <td>Patch Release</td>
+  </tr>
+  <tr>
+    <td>feat(pencil): add 'graphiteWidth' option</td>
+    <td>Feature Release</td>
+  </tr>
+  <tr>
+    <td>
+      perf(pencil): remove graphiteWidth option<br />
+      <br />
+      BREAKING CHANGE: The graphiteWidth option has been removed. 
+      The default graphite width of 10mm is always used for performance reasons.
+    </td>
+    <td>
+      Major Breaking Release
+    </td>
+  </tr>
+</table>
 
 
 Backlog

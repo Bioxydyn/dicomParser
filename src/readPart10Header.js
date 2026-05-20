@@ -2,6 +2,7 @@ import ByteStream from './byteStream.js';
 import DataSet from './dataSet.js';
 import littleEndianByteArrayParser from './littleEndianByteArrayParser.js';
 import readDicomElementExplicit from './readDicomElementExplicit.js';
+import readDicomElementImplicit from './readDicomElementImplicit.js';
 
 /**
  * Parses a DICOM P10 byte array and returns a DataSet object with the parsed elements.  If the options
@@ -43,6 +44,22 @@ export default function readPart10Header (byteArray, options = {}) {
     return true;
   }
 
+  // VR lookup for the small set of File Meta Information tags defined in
+  // PS3.5 Table 7.1-1. Used when a meta header turns out to be encoded in
+  // implicit VR (some scanners ship non-conforming files) so we can still
+  // recover transfer syntax and friends.
+  function getMetaVRLittleEndian(tag) {
+    if (tag === 'x00020000') return 'UL'; // File Meta Information Group Length
+    if (tag === 'x00020001') return 'OB'; // File Meta Information Version
+    if (tag === 'x00020002') return 'UI'; // Media Storage SOP Class UID
+    if (tag === 'x00020003') return 'UI'; // Media Storage SOP Instance UID
+    if (tag === 'x00020010') return 'UI'; // Transfer Syntax UID
+    if (tag === 'x00020012') return 'UI'; // Implementation Class UID
+    if (tag === 'x00020013') return 'SH'; // Implementation Version Name
+    if (tag === 'x00020016') return 'AE'; // Source Application Entity Title
+    return undefined;
+  }
+
   // main function here
   function readTheHeader() {
     // Per the DICOM standard, the header is always encoded in Explicit VR Little Endian (see PS3.10, section 7.1)
@@ -51,6 +68,8 @@ export default function readPart10Header (byteArray, options = {}) {
 
     const warnings = [];
     const elements = {};
+    let metaHeaderIsExplicit = true; // Assume explicit first
+    let firstMetaElementAttempted = false;
 
     if (!isPart10) {
       littleEndianByteStream.position = 0;
@@ -58,16 +77,33 @@ export default function readPart10Header (byteArray, options = {}) {
         elements: { x00020010: { tag: 'x00020010', vr: 'UI', Value: TransferSyntaxUID } },
         warnings,
       };
-      // console.log('Returning metaHeaderDataSet', metaHeaderDataSet);
+
       return metaHeaderDataSet;
     }
 
     while (littleEndianByteStream.position < littleEndianByteStream.byteArray.length) {
-      const position = littleEndianByteStream.position;
-      const element = readDicomElementExplicit(littleEndianByteStream, warnings);
+      const currentPositionBeforeRead = littleEndianByteStream.position;
+      let element;
+
+      if (metaHeaderIsExplicit) {
+        element = readDicomElementExplicit(littleEndianByteStream, warnings);
+
+        if (!firstMetaElementAttempted) {
+          firstMetaElementAttempted = true;
+          // If the first element's VR isn't a valid two-uppercase-letter VR, the
+          // meta header is implicit-encoded. Rewind and re-read implicitly.
+          if (!element.vr || !/^[A-Z]{2}$/.test(element.vr)) {
+            metaHeaderIsExplicit = false;
+            littleEndianByteStream.position = currentPositionBeforeRead;
+            continue;
+          }
+        }
+      } else {
+        element = readDicomElementImplicit(littleEndianByteStream, undefined, getMetaVRLittleEndian);
+      }
 
       if (element.tag > 'x0002ffff') {
-        littleEndianByteStream.position = position;
+        littleEndianByteStream.position = currentPositionBeforeRead;
         break;
       }
       // Cache the littleEndianByteArrayParser for meta header elements, since the rest of the data set may be big endian

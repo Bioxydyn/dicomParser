@@ -1,6 +1,6 @@
 {
   "name": "@bioxydyn/dicom-parser",
-  "version": "1.8.13",
+  "version": "1.8.15",
   "description": "Javascript parser for DICOM Part 10 data",
   "main": "dist/dicomParser.min.js",
   "module": "dist/dicomParser.min.js",
@@ -52,6 +52,8 @@
   "devDependencies": {
     "@babel/core": "^7.17.0",
     "@babel/eslint-parser": "^7.17.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.20.7",
+    "@babel/plugin-transform-object-rest-spread": "^7.27.3",
     "@babel/preset-env": "^7.16.11",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.2.2",

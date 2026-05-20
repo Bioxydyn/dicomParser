@@ -68,7 +68,7 @@ const dicomParser = {
   readSequenceItem,
   readTag,
   LEI,
-  LEE,
+  LEE
 };
 
 export {
