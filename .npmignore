@@ -1,4 +1,5 @@
 ## All Non-Dist Directories
+.circleci/
 config/
 coverage/
 documentation/
@@ -10,7 +11,9 @@ testImages/
 
 ## Root Files
 .babelrc
+.env
 .eslintignore
+.eslintrc.js
 .gitignore
 .jsdocrc
 .travis.yml
